@@ -1,0 +1,12 @@
+{
+  "intents": [
+    {
+      "intent": "DeploymentIntent",
+      "slots": []
+    },
+    {
+      "intent": "HelpIntent",
+      "slots": []
+    }
+  ]
+}
