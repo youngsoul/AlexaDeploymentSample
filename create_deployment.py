@@ -21,7 +21,7 @@ root_deployments_dir = "./deployments"
 # List of files that should be included in the deployment
 # Only the files listed here, and the libraries in the requirements.txt
 # file will be included in the deployment.
-deployment_files = ['AlexaBaseHandler.py', 'AlexaDeploymentHandler.py', 'main.py']
+deployment_files = ['foo.py', 'AlexaBaseHandler.py', 'AlexaDeploymentHandler.py', 'main.py']
 
 def _read_requirements():
     with open("./requirements.txt", 'r') as f:
@@ -67,8 +67,11 @@ def _install_requirements(deployment_requirements, deployment_dir):
 
 def _copy_deployment_files(deployment_dir):
     for deployment_file in deployment_files:
-        cmd = "cp {0} {1}".format(deployment_file, deployment_dir).split()
-        return_code = subprocess.call(cmd, shell=False)
+        if os.path.exists(deployment_file):
+            cmd = "cp {0} {1}".format(deployment_file, deployment_dir).split()
+            return_code = subprocess.call(cmd, shell=False)
+        else:
+            raise NameError("Deployment file not found [{0}]".format(deployment_file))
 
 
 def zipdir(dirPath=None, zipFilePath=None, includeDirInZip=False):
@@ -134,8 +137,8 @@ def zipdir(dirPath=None, zipFilePath=None, includeDirInZip=False):
 
 if __name__ == "__main__":
     (deployment_dir, deployment_name) = _make_deployment_dir()
+    _copy_deployment_files(deployment_dir)
     install_requirements = _read_requirements()
     _install_requirements(install_requirements, deployment_dir)
-    _copy_deployment_files(deployment_dir)
 
     zipdir(deployment_dir, "{0}/{1}.zip".format(root_deployments_dir, deployment_name))
