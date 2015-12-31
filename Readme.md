@@ -4,6 +4,11 @@ Python that can be used in an Alexa Skill.</h2>
 This project is not meant to be a tutorial on Alexa development.  For that
 please see the Amazon documentation at:
 
+Youtube video for this project.
+<code>
+https://www.youtube.com/watch?v=WFWAK175p2g
+</code>
+
 <code>
 https://developer.amazon.com/public/solutions/alexa/alexa-skills-kit
 </code>
