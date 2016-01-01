@@ -1,4 +1,6 @@
 import abc
+import logging
+
 
 class AlexaBaseHandler(object):
     """
@@ -12,7 +14,8 @@ class AlexaBaseHandler(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self):
-        pass
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.INFO)
 
     @abc.abstractmethod
     def on_launch(self, launch_request, session):
@@ -50,15 +53,17 @@ class AlexaBaseHandler(object):
         pass
 
     @abc.abstractmethod
-    def on_processing_error(self, event, context):
+    def on_processing_error(self, event, context, exc):
         """
         If an unexpected error occurs during the process_request method
         this handler will be invoked to give the concrete handler
         an opportunity to respond gracefully
 
+        :param exc exception instance
         :return: the output of _build_response
         """
         pass
+
     def process_request(self, event, context):
         """
         Helper method to process the input Alexa request and
@@ -81,12 +86,12 @@ class AlexaBaseHandler(object):
             elif event['request']['type'] == "SessionEndedRequest":
                 response = self.on_session_ended(event['request'], event['session'])
 
-        except:
-            response = self.on_processing_error(event, context)
+        except Exception as exc:
+            response = self.on_processing_error(event, context, exc)
 
         return response
 
-# --------------- Helpers that build all of the responses ----------------------
+    # --------------- Helpers that build all of the responses ----------------------
     def _build_speechlet_response(self, card_title, card_output, speech_output, reprompt_text, should_end_session):
         """
         Internal helper method to build the speechlet portion of the response
@@ -129,8 +134,8 @@ class AlexaBaseHandler(object):
             'response': speechlet_response
         }
 
-    def _is_intent(self, intent_request):
-        return self._get_intent(intent_request) is not None
+    def _is_intent(self, intent_name, intent_request):
+        return self._get_intent_name(intent_request) == intent_name
 
     def _get_intent(self, intent_request):
         if 'intent' in intent_request:
@@ -154,11 +159,14 @@ class AlexaBaseHandler(object):
             return False
 
     def _get_slot_value(self, slot_name, intent_request):
-        if self._slot_exists(slot_name, intent_request):
-            intent = self._get_intent(intent_request)
-            return intent['slots'][slot_name]['value']
-        else:
-            return None
+        value = None
+        try:
+            if self._slot_exists(slot_name, intent_request):
+                intent = self._get_intent(intent_request)
+                value = intent['slots'][slot_name]['value']
+            else:
+                value = None
+        except Exception as exc:
+            self.logger.error("Error getting slot value for slot_name={0}".format(slot_name))
 
-
-
+        return value

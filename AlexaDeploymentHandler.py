@@ -26,7 +26,7 @@ class AlexaDeploymentHandler(AlexaBaseHandler):
 
         return self._build_response(session_attributes, speechlet)
 
-    def on_processing_error(self, event, context):
+    def on_processing_error(self, event, context, exc):
         return self._test_response("on processing error")
 
     def on_launch(self, launch_request, session):
