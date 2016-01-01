@@ -17,7 +17,8 @@ class AlexaBaseHandler(object):
     @abc.abstractmethod
     def on_launch(self, launch_request, session):
         """
-        Implement the LaunchRequest
+        Implement the LaunchRequest.  Called when the user issues a:
+        Alexa, open <invocation name>
         :param launch_request:
         :param session:
         :return: the output of _build_response
@@ -48,6 +49,16 @@ class AlexaBaseHandler(object):
         """
         pass
 
+    @abc.abstractmethod
+    def on_processing_error(self, event, context):
+        """
+        If an unexpected error occurs during the process_request method
+        this handler will be invoked to give the concrete handler
+        an opportunity to respond gracefully
+
+        :return: the output of _build_response
+        """
+        pass
     def process_request(self, event, context):
         """
         Helper method to process the input Alexa request and
@@ -57,17 +68,21 @@ class AlexaBaseHandler(object):
         :return: response from the on_ handler
         """
         # if its a new session, run the new session code
-        response = None
-        if event['session']['new']:
-            self.on_session_started({'requestId': event['request']['requestId']}, event['session'])
+        try:
+            response = None
+            if event['session']['new']:
+                self.on_session_started({'requestId': event['request']['requestId']}, event['session'])
 
-        # regardless of whether its new, handle the request type
-        if event['request']['type'] == "LaunchRequest":
-            response = self.on_launch(event['request'], event['session'])
-        elif event['request']['type'] == "IntentRequest":
-            response = self.on_intent(event['request'], event['session'])
-        elif event['request']['type'] == "SessionEndedRequest":
-            response = self.on_session_ended(event['request'], event['session'])
+                # regardless of whether its new, handle the request type
+            if event['request']['type'] == "LaunchRequest":
+                response = self.on_launch(event['request'], event['session'])
+            elif event['request']['type'] == "IntentRequest":
+                response = self.on_intent(event['request'], event['session'])
+            elif event['request']['type'] == "SessionEndedRequest":
+                response = self.on_session_ended(event['request'], event['session'])
+
+        except:
+            response = self.on_processing_error(event, context)
 
         return response
 
@@ -113,3 +128,37 @@ class AlexaBaseHandler(object):
             'sessionAttributes': session_attributes,
             'response': speechlet_response
         }
+
+    def _is_intent(self, intent_request):
+        return self._get_intent(intent_request) is not None
+
+    def _get_intent(self, intent_request):
+        if 'intent' in intent_request:
+            return intent_request['intent']
+        else:
+            return None
+
+    def _get_intent_name(self, intent_request):
+        intent = self._get_intent(intent_request)
+        intent_name = None
+        if intent is not None and 'name' in intent:
+            intent_name = intent['name']
+
+        return intent_name
+
+    def _slot_exists(self, slot_name, intent_request):
+        intent = self._get_intent(intent_request)
+        if intent is not None:
+            return slot_name in intent['slots']
+        else:
+            return False
+
+    def _get_slot_value(self, slot_name, intent_request):
+        if self._slot_exists(slot_name, intent_request):
+            intent = self._get_intent(intent_request)
+            return intent['slots'][slot_name]['value']
+        else:
+            return None
+
+
+
